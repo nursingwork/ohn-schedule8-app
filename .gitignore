@@ -1,0 +1,11 @@
+# 忽略所有真實員工健檢 Excel 與 CSV 原始檔（僅允許 sample_data 內去識別化檔案）
+*.xlsx
+*.xls
+*.csv
+!sample_data/*.csv
+
+# 忽略系統與編輯器暫存檔
+.DS_Store
+Thumbs.db
+.vscode/
+.env
