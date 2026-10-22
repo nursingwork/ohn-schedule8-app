@@ -3,444 +3,935 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>臨場勞工健康服務會談紀錄系統 (附表八)</title>
-  <!-- 引入 SheetJS 支援本機直接讀取 Excel (.xlsx) 與 CSV -->
+  <title>臨場勞工健康服務系統 ‧ 附表八旗艦套印平台</title>
+  <!-- 引入 SheetJS 解析本機 Excel 與 CSV -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- 引入 Inter & Noto Sans TC 頂級排版字體 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
   <style>
+    /* ==========================================================================
+       1. 設計系統與核心變數 (Design Tokens)
+       ========================================================================== */
     :root {
-      --primary: #1e40af;
-      --primary-light: #eff6ff;
-      --danger: #dc2626;
-      --border: #64748b;
-      --text: #0f172a;
-      --muted: #64748b;
+      --font-main: "Inter", "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg-app: #090d16;
+      --bg-surface: #0f172a;
+      --bg-surface-elevated: #1e293b;
+      --bg-glass: rgba(15, 23, 42, 0.75);
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-sub: #64748b;
+      
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --primary-glow: rgba(59, 130, 246, 0.25);
+      --accent: #8b5cf6;
+      
+      --danger: #ef4444;
+      --danger-bg: #450a0a;
+      --danger-border: #f87171;
+      
+      --warning: #f59e0b;
+      --warning-bg: #451a03;
+      
+      --success: #10b981;
+      --success-bg: #064e3b;
+
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(59, 130, 246, 0.5);
+      
+      --sheet-bg: #ffffff;
+      --sheet-text: #0f172a;
+      --sheet-border: #334155;
+      --sheet-header-bg: #f1f5f9;
+
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.1);
+      --shadow-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    
     body {
-      font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
-      color: var(--text);
-      background: #f1f5f9;
+      font-family: var(--font-main);
+      background: var(--bg-app);
+      color: var(--text-main);
+      line-height: 1.45;
       font-size: 13.5px;
-      line-height: 1.4;
+      overflow-x: hidden;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     }
-    /* 頂部工具列 */
+
+    /* ==========================================================================
+       2. 頂部奢華導覽列 (Frosted Glass Topbar)
+       ========================================================================== */
     .topbar {
-      background: #0f172a; color: #fff; padding: 10px 18px;
-      display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      height: 56px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
     }
-    .topbar-brand { display: flex; align-items: center; gap: 10px; }
-    .topbar-brand h1 { font-size: 16px; font-weight: 700; }
-    .badge-local {
-      background: #059669; color: #fff; font-size: 11px;
-      padding: 2px 8px; border-radius: 99px; font-weight: 600;
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-    .topbar-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px var(--primary-glow);
+    }
+    .brand-logo svg { width: 18px; height: 18px; fill: #fff; }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-sandbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.4; }
+    }
+
+    .action-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .btn {
-      padding: 6px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 600;
-      cursor: pointer; border: 1px solid transparent; transition: 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s var(--ease-out);
+      user-select: none;
     }
-    .btn-primary { background: #2563eb; color: #fff; }
-    .btn-primary:hover { background: #1d4ed8; }
-    .btn-success { background: #059669; color: #fff; }
-    .btn-success:hover { background: #047857; }
-    .btn-outline { background: #1e293b; color: #e2e8f0; border-color: #475569; }
-    .btn-outline:hover { background: #334155; }
+    .btn:active { transform: scale(0.97); }
 
-    /* 版面配置 */
-    .app-layout { display: grid; grid-template-columns: 310px 1fr; min-height: calc(100vh - 50px); }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--border-subtle);
+      color: var(--text-main);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.09);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .btn-emerald {
+      background: #059669;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+    }
+    .btn-emerald:hover { background: #047857; }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 10px var(--primary-glow);
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    /* ==========================================================================
+       3. 左右分欄主格局 (App Structure)
+       ========================================================================== */
+    .app-viewport {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      height: calc(100vh - 56px);
+      overflow: hidden;
+    }
+
+    /* 左側側邊欄 */
     .sidebar {
-      background: #fff; border-right: 1px solid #cbd5e1;
-      display: flex; flex-direction: column; height: calc(100vh - 50px);
-      position: sticky; top: 50px;
-    }
-    .sidebar-header { padding: 10px; border-bottom: 1px solid #cbd5e1; background: #f8fafc; }
-    .search-input {
-      width: 100%; padding: 7px 10px; border: 1px solid #cbd5e1;
-      border-radius: 6px; font-size: 13px; margin-bottom: 8px;
-    }
-    .filter-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
-    .filter-tab {
-      font-size: 11px; padding: 3px 7px; border-radius: 4px;
-      border: 1px solid #cbd5e1; background: #fff; cursor: pointer; color: #475569;
-    }
-    .filter-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 600; }
-    .employee-list { flex: 1; overflow-y: auto; padding: 8px; }
-    .emp-card {
-      padding: 9px 11px; border: 1px solid #e2e8f0; border-radius: 7px;
-      margin-bottom: 6px; cursor: pointer; background: #fff; transition: 0.12s;
-    }
-    .emp-card:hover { border-color: #93c5fd; background: #f8fafc; }
-    .emp-card.active { border-color: var(--primary); background: var(--primary-light); }
-    .emp-card-top { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 3px; }
-    .emp-meta { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-    .emp-badges { display: flex; gap: 4px; flex-wrap: wrap; }
-    .tag { font-size: 10.5px; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
-    .tag-g1 { background: #f1f5f9; color: #475569; }
-    .tag-g2 { background: #dbeafe; color: #1e40af; }
-    .tag-g3 { background: #fef3c7; color: #b45309; }
-    .tag-g4 { background: #fee2e2; color: #b91c1c; }
-    .tag-track { background: #ede9fe; color: #6d28d9; }
-
-    /* 右側附表八表單區 */
-    .main-workspace { padding: 18px; overflow-y: auto; }
-    .schedule8-sheet {
-      max-width: 1000px; margin: 0 auto; background: #fff;
-      border: 2px solid #0f172a; padding: 16px 20px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-    }
-    .sheet-title {
-      text-align: center; font-size: 18px; font-weight: 800;
-      letter-spacing: 1px; padding-bottom: 6px; border-bottom: 2px solid #0f172a; margin-bottom: 8px;
-    }
-    .section-header {
-      background: #e2e8f0; color: #0f172a; font-weight: 700; font-size: 13px;
-      padding: 4px 8px; border: 1px solid var(--border); border-bottom: none;
-      margin-top: 8px; display: flex; justify-content: space-between; align-items: center;
-    }
-    .form-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12.5px; }
-    .form-table th, .form-table td {
-      border: 1px solid var(--border); padding: 4px 6px; vertical-align: middle; word-wrap: break-word;
-    }
-    .cell-label { background: #f1f5f9; font-weight: 600; text-align: center; color: #1e293b; }
-    .val-abn-1 { color: #0369a1; font-weight: 600; }
-    .val-abn-2 { color: #b45309; font-weight: 700; background: #fffbeb; }
-    .val-abn-3, .val-abn-4 { color: #dc2626; font-weight: 800; background: #fef2f2; }
-
-    .inline-input {
-      width: 100%; border: 1px solid transparent; background: transparent;
-      font-family: inherit; font-size: 12.5px; padding: 1px 3px;
-    }
-    .inline-input:focus, .inline-input:hover { border-color: #94a3b8; background: #f8fafc; outline: none; }
-    .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
-    .checkbox-item { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
-    .notes-textarea {
-      width: 100%; min-height: 90px; border: 1px solid #cbd5e1; border-radius: 4px;
-      padding: 5px; font-family: inherit; font-size: 12.5px; line-height: 1.45; resize: vertical;
-    }
-    .risk-pill { display: inline-block; padding: 1px 7px; border-radius: 99px; font-size: 11px; font-weight: 700; }
-    .risk-low { background: #dcfce7; color: #166534; }
-    .risk-mid { background: #fef3c7; color: #92400e; }
-    .risk-high { background: #fee2e2; color: #991b1b; }
-
-    /* 電子職章 */
-    .stamp-box {
-      display: inline-flex; align-items: center; justify-content: center;
-      border: 2.5px solid #dc2626; color: #dc2626; font-weight: 800; font-size: 13.5px;
-      padding: 2px 10px; border-radius: 4px; letter-spacing: 2px; transform: rotate(-2deg);
-      background: rgba(254, 242, 242, 0.75); min-width: 80px;
-    }
-    .quick-btn {
-      font-size: 11px; padding: 2px 7px; border-radius: 4px;
-      border: 1px solid #93c5fd; background: #eff6ff; color: #1e40af; cursor: pointer; font-weight: 600;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
 
+    .sidebar-search-area {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-box svg {
+      position: absolute;
+      left: 10px;
+      width: 15px;
+      height: 15px;
+      fill: var(--text-sub);
+      pointer-events: none;
+    }
+    .input-search {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-subtle);
+      color: #fff;
+      font-size: 13px;
+      padding: 8px 10px 8px 32px;
+      border-radius: var(--radius-sm);
+      outline: none;
+      transition: all 0.2s;
+    }
+    .input-search:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .filter-pill-group {
+      display: flex;
+      gap: 5px;
+      overflow-x: auto;
+    }
+    .pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .pill.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+      box-shadow: 0 1px 6px var(--primary-glow);
+    }
+
+    .sidebar-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 12px;
+    }
+    .sidebar-list::-webkit-scrollbar { width: 4px; }
+    .sidebar-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .employee-card {
+      padding: 11px 13px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.02);
+      margin-bottom: 7px;
+      cursor: pointer;
+      transition: all 0.18s var(--ease-out);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .employee-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.16);
+      transform: translateY(-1px);
+    }
+    .employee-card.active {
+      background: rgba(59, 130, 246, 0.09);
+      border-color: var(--primary);
+      box-shadow: 0 0 12px var(--primary-glow);
+    }
+
+    .emp-row-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .emp-id-label {
+      font-weight: 700;
+      font-size: 13.5px;
+      letter-spacing: 0.3px;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+    .emp-sub-label {
+      font-size: 11.5px;
+      color: var(--text-sub);
+    }
+
+    .emp-dept-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .emp-badge-row {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+    .chip {
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 4px;
+      letter-spacing: -0.1px;
+    }
+    .chip-g1 { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+    .chip-g2 { background: rgba(59, 130, 246, 0.18); color: #60a5fa; }
+    .chip-g3 { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
+    .chip-g4 { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .chip-track { background: rgba(139, 92, 246, 0.2); color: #c084fc; }
+
+    /* ==========================================================================
+       4. 右側工作區與 A4 紙張視圖 (Schedule 8 Form View)
+       ========================================================================== */
+    .workspace {
+      flex: 1;
+      height: 100%;
+      overflow-y: auto;
+      padding: 24px 32px 64px 32px;
+      background: radial-gradient(circle at 50% 0%, #1e293b 0%, #090d16 80%);
+      display: flex;
+      justify-content: center;
+    }
+    .workspace::-webkit-scrollbar { width: 8px; }
+    .workspace::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+
+    .a4-paper {
+      width: 100%;
+      max-width: 980px;
+      background: var(--sheet-bg);
+      color: var(--sheet-text);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .form-heading {
+      text-align: center;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--sheet-border);
+    }
+    .form-heading h2 {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #0f172a;
+    }
+    .form-subtitle {
+      font-size: 11.5px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .table-section-title {
+      background: #e2e8f0;
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 12.5px;
+      padding: 4px 8px;
+      border: 1px solid var(--sheet-border);
+      border-bottom: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 12px;
+    }
+    .data-table th,
+    .data-table td {
+      border: 1px solid var(--sheet-border);
+      padding: 4px 6px;
+      vertical-align: middle;
+      word-break: break-all;
+      font-variant-numeric: tabular-nums;
+    }
+    .data-table th {
+      background: var(--sheet-header-bg);
+      font-weight: 700;
+      color: #1e293b;
+      text-align: center;
+    }
+    .th-col {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #334155;
+      text-align: center;
+    }
+
+    /* 異常數值亮顯 */
+    .abn-none { color: inherit; }
+    .abn-borderline { color: #0369a1; font-weight: 600; }
+    .abn-moderate { color: #b45309; font-weight: 700; background: #fffbeb; }
+    .abn-severe { color: #b91c1c; font-weight: 800; background: #fee2e2; }
+
+    /* 互動性微型表單控制 */
+    .check-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      user-select: none;
+      margin-right: 8px;
+      font-size: 11.5px;
+    }
+    .check-wrap input[type="checkbox"],
+    .check-wrap input[type="radio"] {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .clean-input {
+      border: none;
+      border-bottom: 1px dashed #94a3b8;
+      background: transparent;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 1px 4px;
+      outline: none;
+      color: #0f172a;
+    }
+    .clean-input:focus { border-bottom: 1.5px solid var(--primary); background: #f0f7ff; }
+
+    .textarea-notes {
+      width: 100%;
+      min-height: 80px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 6px;
+      font-family: inherit;
+      font-size: 11.5px;
+      line-height: 1.5;
+      resize: vertical;
+      background: #fcfcfc;
+    }
+    .textarea-notes:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #fff;
+    }
+
+    /* 慢性疾病風險長條計量器 (Micro Risk Meter) */
+    .meter-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      align-items: center;
+    }
+    .meter-val-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .meter-bar-track {
+      width: 100%;
+      height: 5px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+    .meter-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s var(--ease-out);
+    }
+    .meter-low { background: #10b981; }
+    .meter-mid { background: #f59e0b; }
+    .meter-high { background: #ef4444; }
+
+    /* 仿真朱文職章效果 */
+    .stamp-render {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #dc2626;
+      color: #dc2626;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 2px 10px;
+      border-radius: 3px;
+      letter-spacing: 2px;
+      transform: rotate(-2deg);
+      background: rgba(254, 242, 242, 0.7);
+      box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.2);
+    }
+
+    /* ==========================================================================
+       5. 浮動式氣泡通知系統 (Glassmorphism Toast)
+       ========================================================================== */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 999;
+      pointer-events: none;
+    }
+    .toast-msg {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toastIn 0.3s var(--ease-out) forwards;
+    }
+    @keyframes toastIn {
+      from { transform: translateY(12px) scale(0.96); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    /* ==========================================================================
+       6. 完美像素級列印樣式 (A4 Print Engine)
+       ========================================================================== */
     @media print {
-      @page { size: A4 portrait; margin: 6mm 7mm; }
-      body { background: #fff; font-size: 10px; }
-      .topbar, .sidebar, .no-print { display: none !important; }
-      .app-layout { display: block; }
-      .main-workspace { padding: 0; }
-      .schedule8-sheet { border: 1.5px solid #000; box-shadow: none; padding: 6px; max-width: 100%; }
-      .section-header, .cell-label, .val-abn-2, .val-abn-3, .val-abn-4, .risk-pill, .stamp-box {
-        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      @page {
+        size: A4 portrait;
+        margin: 6mm 8mm;
       }
-      .form-table th, .form-table td { padding: 2px 4px; font-size: 9.5px; }
-      .notes-textarea { border: none; min-height: 60px; font-size: 9.5px; resize: none; }
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        font-size: 9.5px;
+      }
+      .topbar, .sidebar, .toast-container, .no-print {
+        display: none !important;
+      }
+      .app-viewport {
+        display: block !important;
+        height: auto !important;
+      }
+      .workspace {
+        padding: 0 !important;
+        background: none !important;
+      }
+      .a4-paper {
+        max-width: 100% !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+      }
+      .form-heading h2 { font-size: 15px !important; }
+      .table-section-title {
+        background: #e2e8f0 !important;
+        color: #000 !important;
+        font-size: 10px !important;
+        padding: 2px 4px !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .data-table th, .data-table td {
+        padding: 2px 3px !important;
+        font-size: 9px !important;
+        border-color: #000 !important;
+      }
+      .textarea-notes {
+        border: none !important;
+        padding: 0 !important;
+        font-size: 9px !important;
+        min-height: 48px !important;
+        background: transparent !important;
+      }
+      .stamp-render {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- 頂部工具列 -->
+  <!-- 頂部奢華導覽列 -->
   <header class="topbar">
-    <div class="topbar-brand">
-      <h1>臨場勞工健康服務會談紀錄系統 (附表八)</h1>
-      <span class="badge-local">本機記憶體運算・個資不外流</span>
+    <div class="brand-wrap">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+      </div>
+      <div class="brand-title">
+        <span>勞工健康服務臨場個管系統</span>
+        <span class="badge-sandbox"><span class="pulse-dot"></span>本機安全沙盒 (Local-First)</span>
+      </div>
     </div>
-    <div class="topbar-actions">
-      <label class="btn btn-outline">
-        📂 匯入 Excel / CSV
-        <input type="file" id="fileInput" multiple accept=".csv,.xlsx,.xls" style="display:none" />
+    <div class="action-group">
+      <label class="btn btn-secondary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+        載入原始總表 (Excel/CSV)
+        <input type="file" id="fileUploader" multiple accept=".csv,.xlsx,.xls" style="display:none;" />
       </label>
-      <button class="btn btn-success" onclick="saveCurrentConsultation()">💾 寫入歷年紀錄</button>
-      <button class="btn btn-outline" onclick="exportHistoryCSV()">⬇️ 匯出歷年紀錄 CSV</button>
-      <button class="btn btn-primary" onclick="window.print()">🖨️ 列印 / 另存 A4 PDF</button>
+      <button class="btn btn-emerald" onclick="commitConsultation()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+        寫入歷年紀錄 (Ctrl+S)
+      </button>
+      <button class="btn btn-secondary" onclick="exportUpdatedTimelineCSV()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        匯出歷年紀錄 CSV
+      </button>
+      <button class="btn btn-primary" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-4 11H9v-5h6v5zm4-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm1-9H4v4h16V3z"/></svg>
+        列印 A4 附表八 (Ctrl+P)
+      </button>
     </div>
   </header>
 
-  <div class="app-layout">
-    <!-- 左側個案導覽 -->
+  <!-- 主格局 -->
+  <div class="app-viewport">
+    
+    <!-- 左側導覽列 -->
     <aside class="sidebar">
-      <div class="sidebar-header">
-        <input type="text" id="searchInput" class="search-input" placeholder="搜尋工號、部門、廠區、病史..." oninput="renderEmployeeList()" />
-        <div class="filter-tabs">
-          <button class="filter-tab active" onclick="setFilter('all', this)">全部</button>
-          <button class="filter-tab" onclick="setFilter('track', this)">115追蹤</button>
-          <button class="filter-tab" onclick="setFilter('g34', this)">健管3-4級</button>
-          <button class="filter-tab" onclick="setFilter('overload', this)">需面談負荷</button>
+      <div class="sidebar-search-area">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="text" id="filterInput" class="input-search" placeholder="搜尋工號、單位、病史... (快捷鍵: /)" oninput="filterEmployeeList()" />
+        </div>
+        <div class="filter-pill-group">
+          <span class="pill active" onclick="applyQuickFilter('all', this)">全部</span>
+          <span class="pill" onclick="applyQuickFilter('track', this)">115追蹤名單</span>
+          <span class="pill" onclick="applyQuickFilter('g34', this)">健管 3~4 級</span>
+          <span class="pill" onclick="applyQuickFilter('overload', this)">需面談負荷</span>
         </div>
       </div>
-      <div id="employeeList" class="employee-list"></div>
+      <div id="employeeCardList" class="sidebar-list"></div>
     </aside>
 
-    <!-- 右側附表八主表單 -->
-    <main class="main-workspace">
-      <div class="schedule8-sheet">
-        <div class="sheet-title">勞工健康服務會談諮詢及建議採行措施紀錄表</div>
+    <!-- 右側 A4 附表八表單預覽 -->
+    <main class="workspace">
+      <div class="a4-paper">
+        
+        <!-- 表頭 -->
+        <div class="form-heading">
+          <h2>勞工健康服務會談諮詢及建議採行措施紀錄表</h2>
+          <div class="form-subtitle">依據職業安全衛生法與勞工健康保護規則附表八標準格式擬定</div>
+        </div>
 
         <!-- 一、會談項目 -->
-        <div class="section-header">
+        <div class="table-section-title">
           <span>【會談項目】</span>
-          <span style="font-size:11.5px;font-weight:normal;">特作項目總覽：<strong id="f_spec_overview">-</strong> ｜ 最高分級：<strong id="f_spec_grade">-</strong></span>
+          <span style="font-weight:500;font-size:11px;">特作項目：<strong id="metaSpecList">-</strong> ｜ 特作最高分級：<strong id="metaSpecGrade">-</strong></span>
         </div>
-        <table class="form-table">
+        <table class="data-table">
           <tr>
             <td colspan="12">
-              <div class="checkbox-group">
-                <label class="checkbox-item"><input type="checkbox" id="chk_new" /> 新進員工</label>
-                <label class="checkbox-item"><input type="checkbox" id="chk_gen" checked /> 一般健檢</label>
-                <label class="checkbox-item"><input type="checkbox" id="chk_consult" checked /> 員工諮詢</label>
-                <label class="checkbox-item"><input type="checkbox" id="chk_spec" /> 特殊健檢</label>
-                <label class="checkbox-item"><input type="checkbox" id="chk_overload" /> 異常負荷</label>
-                <label class="checkbox-item"><input type="checkbox" id="chk_maternal" /> 母性保護</label>
-                <label class="checkbox-item"><input type="checkbox" id="chk_unlawful" /> 不法侵害</label>
-                <label class="checkbox-item"><input type="checkbox" id="chk_ergo" /> 人因肌肉骨骼</label>
-                <label class="checkbox-item"><input type="checkbox" id="chk_senior" /> 中高齡</label>
-                <label class="checkbox-item"><input type="checkbox" id="chk_injury" /> 職災追蹤</label>
-                <label class="checkbox-item"><input type="checkbox" id="chk_rtw" /> 復配工評估</label>
-              </div>
+              <label class="check-wrap"><input type="checkbox" id="chk_new"> 新進員工</label>
+              <label class="check-wrap"><input type="checkbox" id="chk_gen" checked> 一般健檢</label>
+              <label class="check-wrap"><input type="checkbox" id="chk_counsel" checked> 員工諮詢</label>
+              <label class="check-wrap"><input type="checkbox" id="chk_spec"> 特殊健檢</label>
+              <label class="check-wrap"><input type="checkbox" id="chk_overload"> 異常負荷</label>
+              <label class="check-wrap"><input type="checkbox" id="chk_maternal"> 母性保護</label>
+              <label class="check-wrap"><input type="checkbox" id="chk_violence"> 不法侵害</label>
+              <label class="check-wrap"><input type="checkbox" id="chk_ergo"> 人因肌肉骨骼</label>
+              <label class="check-wrap"><input type="checkbox" id="chk_senior"> 中高齡評估</label>
+              <label class="check-wrap"><input type="checkbox" id="chk_injury"> 職災追蹤</label>
+              <label class="check-wrap"><input type="checkbox" id="chk_rtw"> 復配工評估</label>
             </td>
           </tr>
         </table>
 
         <!-- 二、基本資料 -->
-        <div class="section-header"><span>【基本資料】</span></div>
-        <table class="form-table">
+        <div class="table-section-title"><span>【基本資料】</span></div>
+        <table class="data-table">
           <tr>
-            <td class="cell-label" colspan="1">姓名</td>
-            <td colspan="2"><input class="inline-input" id="f_name" placeholder="(去識別化/可補填)" /></td>
-            <td class="cell-label" colspan="1">性別</td>
-            <td colspan="1" id="f_gender" style="text-align:center;">-</td>
-            <td class="cell-label" colspan="1">年齡</td>
-            <td colspan="1" id="f_age" style="text-align:center;">-</td>
-            <td class="cell-label" colspan="1">生日</td>
-            <td colspan="2" id="f_birth" style="text-align:center;">-</td>
-            <td class="cell-label" colspan="1">工號</td>
-            <td colspan="1" id="f_empid" style="text-align:center;font-weight:700;color:#1e40af;">-</td>
+            <td class="th-col" style="width:75px;">姓名</td>
+            <td colspan="2"><input type="text" id="val_name" class="clean-input" placeholder="(去識別化/可填寫)" style="width:100%;"></td>
+            <td class="th-col" style="width:50px;">性別</td>
+            <td style="text-align:center;width:45px;" id="val_gender">-</td>
+            <td class="th-col" style="width:50px;">年齡</td>
+            <td style="text-align:center;width:45px;" id="val_age">-</td>
+            <td class="th-col" style="width:75px;">出生日期</td>
+            <td colspan="2" style="text-align:center;" id="val_birth">-</td>
+            <td class="th-col" style="width:65px;">員工工號</td>
+            <td style="text-align:center;font-weight:700;color:#1e40af;" id="val_empid">-</td>
           </tr>
           <tr>
-            <td class="cell-label" colspan="2">廠區 / 部門單位</td>
-            <td colspan="4" id="f_dept">-</td>
-            <td class="cell-label" colspan="2">工作內容 / 職稱</td>
-            <td colspan="2" id="f_title">-</td>
-            <td class="cell-label" colspan="1">到職日</td>
-            <td colspan="1" id="f_hire">-</td>
+            <td class="th-col">廠區 / 部門</td>
+            <td colspan="4" id="val_dept">-</td>
+            <td class="th-col">職稱</td>
+            <td colspan="3" id="val_title">-</td>
+            <td class="th-col">到職日期</td>
+            <td colspan="2" style="text-align:center;" id="val_hire">-</td>
           </tr>
           <tr>
-            <td class="cell-label" colspan="2">輪班 / 加班時數</td>
-            <td colspan="4">輪班：<strong id="f_shift">-</strong> ｜ 加班：<strong id="f_ot">-</strong> hr/月</td>
-            <td class="cell-label" colspan="2">工作危害</td>
-            <td colspan="4"><input class="inline-input" id="f_hazard" placeholder="點擊輸入作業環境危害因素..." /></td>
+            <td class="th-col">輪班 / 加班</td>
+            <td colspan="4">輪班：<strong id="val_shift">-</strong> ｜ 加班時數：<strong id="val_ot">-</strong> hr/月</td>
+            <td class="th-col">工作危害</td>
+            <td colspan="6"><input type="text" id="val_hazard" class="clean-input" placeholder="可輸入危害因子（噪音、粉塵、化學品等）" style="width:100%;"></td>
           </tr>
         </table>
 
-        <!-- 三、會談諮詢內容與生化指標 -->
-        <div class="section-header">
-          <span>【會談諮詢內容與健檢數據（系統自動判讀分級）】</span>
-          <div class="checkbox-group" style="font-size:12px;">
-            <span>訪視方式：</span>
-            <label class="checkbox-item"><input type="radio" name="visit_mode" checked /> 面談</label>
-            <label class="checkbox-item"><input type="radio" name="visit_mode" /> 視訊</label>
-            <label class="checkbox-item"><input type="radio" name="visit_mode" /> 電話</label>
-            <span>｜ 訪談日期：<input type="date" id="f_visit_date" value="2026-10-22" style="border:1px solid #94a3b8;border-radius:3px;font-size:11.5px;" /></span>
+        <!-- 三、會談內容與健檢數據 -->
+        <div class="table-section-title">
+          <span>【會談諮詢內容與健檢數據（自動判讀高亮）】</span>
+          <div style="font-weight:normal;font-size:11px;">
+            訪談模式：
+            <label class="check-wrap"><input type="radio" name="visitType" checked>面談</label>
+            <label class="check-wrap"><input type="radio" name="visitType">視訊</label>
+            <label class="check-wrap"><input type="radio" name="visitType">電話</label>
+            ｜ 訪談日：<input type="date" id="val_interview_date" value="2026-10-22" style="border:1px solid #cbd5e1;border-radius:3px;font-size:11px;">
           </div>
         </div>
-        <table class="form-table">
+        <table class="data-table">
           <tr>
-            <td class="cell-label" colspan="2">健檢日期</td>
-            <td colspan="2" id="f_exam_date">-</td>
-            <td class="cell-label" colspan="2">過去病史</td>
-            <td colspan="6" id="f_history_med">-</td>
+            <td class="th-col" style="width:75px;">健檢日期</td>
+            <td colspan="2" style="text-align:center;" id="val_exam_date">-</td>
+            <td class="th-col" style="width:75px;">過去病史</td>
+            <td colspan="7" id="val_history">-</td>
           </tr>
           <tr>
-            <td class="cell-label" colspan="1">菸</td>
-            <td colspan="2" id="f_smoke">-</td>
-            <td class="cell-label" colspan="1">酒</td>
-            <td colspan="2" id="f_drink">-</td>
-            <td class="cell-label" colspan="1">檳榔</td>
-            <td colspan="2" id="f_betel">-</td>
-            <td class="cell-label" colspan="1">睡眠</td>
-            <td colspan="2"><span id="f_sleep">-</span> hr/天</td>
+            <td class="th-col">吸菸</td>
+            <td colspan="2" style="text-align:center;" id="val_smoke">-</td>
+            <td class="th-col">飲酒</td>
+            <td colspan="2" style="text-align:center;" id="val_drink">-</td>
+            <td class="th-col">檳榔</td>
+            <td colspan="2" style="text-align:center;" id="val_betel">-</td>
+            <td class="th-col">睡眠</td>
+            <td colspan="2" style="text-align:center;"><span id="val_sleep">-</span> hr/天</td>
           </tr>
           <tr>
-            <td class="cell-label" colspan="2">自覺症狀</td>
-            <td colspan="10" id="f_symptoms">-</td>
+            <td class="th-col">自覺症狀</td>
+            <td colspan="11" id="val_symptoms">-</td>
           </tr>
           <tr>
-            <td class="cell-label">BH (cm)</td><td id="f_bh" style="text-align:center;">-</td>
-            <td class="cell-label">BW (kg)</td><td id="f_bw" style="text-align:center;">-</td>
-            <td class="cell-label">BMI</td><td id="f_bmi" style="text-align:center;">-</td>
-            <td class="cell-label">腰圍 (cm)</td><td id="f_waist" style="text-align:center;">-</td>
-            <td class="cell-label">BP (mmHg)</td><td colspan="3" id="f_bp" style="text-align:center;">-</td>
+            <td class="th-col">身高 (cm)</td><td style="text-align:center;" id="val_bh">-</td>
+            <td class="th-col">體重 (kg)</td><td style="text-align:center;" id="val_bw">-</td>
+            <td class="th-col">BMI</td><td style="text-align:center;" id="val_bmi">-</td>
+            <td class="th-col">腰圍 (cm)</td><td style="text-align:center;" id="val_waist">-</td>
+            <td class="th-col">血壓 (mmHg)</td><td colspan="3" style="text-align:center;" id="val_bp">-</td>
           </tr>
           <tr>
-            <td class="cell-label">WBC</td><td id="f_wbc" style="text-align:center;">-</td>
-            <td class="cell-label">Hb</td><td id="f_hb" style="text-align:center;">-</td>
-            <td class="cell-label">AC Sugar</td><td id="f_ac" style="text-align:center;">-</td>
-            <td class="cell-label">GPT</td><td id="f_gpt" style="text-align:center;">-</td>
-            <td class="cell-label">Cr</td><td id="f_cr" style="text-align:center;">-</td>
-            <td class="cell-label">CXR</td><td id="f_cxr" style="text-align:center;">-</td>
+            <td class="th-col">白血球 WBC</td><td style="text-align:center;" id="val_wbc">-</td>
+            <td class="th-col">血紅素 Hb</td><td style="text-align:center;" id="val_hb">-</td>
+            <td class="th-col">空腹血糖 AC</td><td style="text-align:center;" id="val_ac">-</td>
+            <td class="th-col">肝功能 GPT</td><td style="text-align:center;" id="val_gpt">-</td>
+            <td class="th-col">肌酸酐 Cr</td><td style="text-align:center;" id="val_cr">-</td>
+            <td class="th-col">胸部X光</td><td style="text-align:center;" id="val_cxr">-</td>
           </tr>
           <tr>
-            <td class="cell-label">T-Chol</td><td id="f_tc" style="text-align:center;">-</td>
-            <td class="cell-label">TG</td><td id="f_tg" style="text-align:center;">-</td>
-            <td class="cell-label">HDL</td><td id="f_hdl" style="text-align:center;">-</td>
-            <td class="cell-label">LDL</td><td id="f_ldl" style="text-align:center;">-</td>
-            <td class="cell-label">U-Pro / Glu</td><td colspan="3" id="f_urine" style="text-align:center;">-</td>
+            <td class="th-col">總膽固醇 TC</td><td style="text-align:center;" id="val_tc">-</td>
+            <td class="th-col">三酸甘油 TG</td><td style="text-align:center;" id="val_tg">-</td>
+            <td class="th-col">高密度 HDL</td><td style="text-align:center;" id="val_hdl">-</td>
+            <td class="th-col">低密度 LDL</td><td style="text-align:center;" id="val_ldl">-</td>
+            <td class="th-col">尿蛋白/糖</td><td colspan="3" style="text-align:center;" id="val_urine">-</td>
           </tr>
           <tr>
-            <td class="cell-label" colspan="2">理學檢查摘要</td>
-            <td colspan="6" id="f_phys_summary">-</td>
-            <td class="cell-label" colspan="2">健康管理等級</td>
-            <td colspan="2" id="f_health_grade" style="text-align:center;font-weight:800;font-size:13.5px;">-</td>
+            <td class="th-col">理學檢查摘要</td>
+            <td colspan="7" id="val_phys">-</td>
+            <td class="th-col" colspan="2">健康管理等級</td>
+            <td colspan="2" style="text-align:center;font-weight:800;font-size:13px;" id="val_health_level">-</td>
           </tr>
         </table>
 
         <!-- 四、異常負荷與人因肌肉骨骼評估 -->
-        <div class="section-header"><span>【異常工作負荷促發疾病風險 ＆ 人因肌肉骨骼危害評估】</span></div>
-        <table class="form-table">
+        <div class="table-section-title"><span>【異常工作負荷促發疾病風險 ＆ 人因肌肉骨骼危害評估】</span></div>
+        <table class="data-table">
           <tr>
-            <th colspan="2">異常負荷指標</th>
-            <th colspan="2">數值</th>
-            <th colspan="1">評級</th>
-            <th colspan="2">人因肌肉骨骼項目</th>
-            <th colspan="5">各部位痠痛指數 (0~3級) 與危害統計</th>
+            <th colspan="2">異常工作負荷指標</th>
+            <th>數值</th>
+            <th>評級</th>
+            <th colspan="2">人因肌肉骨骼危害評估</th>
+            <th colspan="6">痠痛指數 (0~3分) 與危害統計</th>
           </tr>
           <tr>
-            <td class="cell-label" colspan="2">10年心血管 FRS</td>
-            <td colspan="2" id="f_frs" style="text-align:center;">-</td>
-            <td id="s_frs" style="text-align:center;">0</td>
-            <td class="cell-label" colspan="2">慣用手 / 是否不適</td>
-            <td colspan="5">慣用手：<strong id="f_hand">-</strong> ｜ 不適：<strong id="f_msd_pain">-</strong> ｜ 持續：<strong id="f_msd_dur">-</strong></td>
+            <td class="th-col" colspan="2">心血管風險 FRS</td>
+            <td style="text-align:center;" id="sc_frs_val">-</td>
+            <td style="text-align:center;" id="sc_frs_score">0</td>
+            <td class="th-col" colspan="2">慣用手 / 不適狀態</td>
+            <td colspan="6">慣用手：<strong id="val_hand">-</strong> ｜ 不適：<strong id="val_msd_pain">-</strong> ｜ 持續：<strong id="val_msd_dur">-</strong></td>
           </tr>
           <tr>
-            <td class="cell-label" colspan="2">CVD 人工校正</td>
-            <td colspan="2" style="text-align:center;">
-              <select id="f_cvd_override" onchange="recalcCurrentOverload()" style="font-size:12px;padding:1px 4px;">
+            <td class="th-col" colspan="2">CVD 人工校正等級</td>
+            <td style="text-align:center;">
+              <select id="val_cvd_select" onchange="onCvdOverrideChange()" style="font-size:11px;padding:1px 3px;">
                 <option value="0">0 (未校正)</option>
-                <option value="1">1 (中度風險)</option>
-                <option value="2">2 (高度風險)</option>
+                <option value="1">1 (中風險)</option>
+                <option value="2">2 (高風險)</option>
               </select>
             </td>
-            <td id="s_cvd" style="text-align:center;">0</td>
-            <td class="cell-label" colspan="2">軀幹 (頸/上背/下背)</td>
-            <td colspan="5" id="f_msd_trunk">-</td>
+            <td style="text-align:center;" id="sc_cvd_score">0</td>
+            <td class="th-col" colspan="2">軀幹痠痛 (頸/上背/下背)</td>
+            <td colspan="6" id="val_msd_trunk">-</td>
           </tr>
           <tr>
-            <td class="cell-label" colspan="2">個人疲勞 I-Score</td>
-            <td colspan="2" id="f_iscore" style="text-align:center;">-</td>
-            <td id="s_iscore" style="text-align:center;">0</td>
-            <td class="cell-label" colspan="2">上肢 (肩/肘/腕)</td>
-            <td colspan="5" id="f_msd_upper">-</td>
+            <td class="th-col" colspan="2">個人疲勞量表 I-Score</td>
+            <td style="text-align:center;" id="sc_iscore_val">-</td>
+            <td style="text-align:center;" id="sc_iscore_score">0</td>
+            <td class="th-col" colspan="2">上肢痠痛 (肩/肘/腕)</td>
+            <td colspan="6" id="val_msd_upper">-</td>
           </tr>
           <tr>
-            <td class="cell-label" colspan="2">工作疲勞 J-Score</td>
-            <td colspan="2" id="f_jscore" style="text-align:center;">-</td>
-            <td id="s_jscore" style="text-align:center;">0</td>
-            <td class="cell-label" colspan="2">下肢 (臀腿/膝/踝)</td>
-            <td colspan="5" id="f_msd_lower">-</td>
+            <td class="th-col" colspan="2">工作疲勞量表 J-Score</td>
+            <td style="text-align:center;" id="sc_jscore_val">-</td>
+            <td style="text-align:center;" id="sc_jscore_score">0</td>
+            <td class="th-col" colspan="2">下肢痠痛 (臀腿/膝/踝)</td>
+            <td colspan="6" id="val_msd_lower">無顯著異常</td>
           </tr>
           <tr>
-            <td class="cell-label" colspan="2">加班 / 工作型態</td>
-            <td colspan="2" id="f_ot_worktype" style="text-align:center;">-</td>
-            <td id="s_ot_wt" style="text-align:center;">0</td>
-            <td class="cell-label" colspan="2">異常負荷最終風險</td>
-            <td colspan="2" id="f_overload_risk" style="text-align:center;font-weight:800;">-</td>
-            <td class="cell-label" colspan="2">人因危害(項)</td>
-            <td colspan="1" id="f_ergo_count" style="text-align:center;font-weight:700;">0</td>
+            <td class="th-col" colspan="2">加班 / 工作型態</td>
+            <td style="text-align:center;" id="sc_ot_wt_val">-</td>
+            <td style="text-align:center;" id="sc_ot_wt_score">0</td>
+            <td class="th-col" colspan="2">異常負荷最終風險等級</td>
+            <td colspan="2" style="text-align:center;font-weight:800;" id="val_overload_grade">-</td>
+            <td class="th-col" colspan="2">人因危害總項</td>
+            <td colspan="2" style="text-align:center;font-weight:700;" id="val_ergo_count">0</td>
           </tr>
         </table>
 
-        <!-- 五、慢性疾病風險評估 (國健署模型) -->
-        <div class="section-header"><span>【國健署 10 年慢性疾病風險預測評估 (35~70歲適用)】</span></div>
-        <table class="form-table">
+        <!-- 五、國健署 10 年慢性疾病風險評估 -->
+        <div class="table-section-title"><span>【國健署 10 年慢性疾病罹病風險預測模型 (35~70歲適用)】</span></div>
+        <table class="data-table">
           <tr>
-            <th>冠心病風險</th>
-            <th>腦中風風險</th>
-            <th>糖尿病風險</th>
-            <th>高血壓風險</th>
+            <th>冠心病風險 (CHD)</th>
+            <th>腦中風風險 (Stroke)</th>
+            <th>糖尿病風險 (Diabetes)</th>
+            <th>高血壓風險 (HTN)</th>
             <th>心血管不良事件 (MACE)</th>
           </tr>
-          <tr style="text-align:center;">
-            <td id="r_chd">-</td>
-            <td id="r_stroke">-</td>
-            <td id="r_dm">-</td>
-            <td id="r_htn">-</td>
-            <td id="r_mace">-</td>
+          <tr>
+            <td id="meter_chd"><div class="meter-wrap">-</div></td>
+            <td id="meter_stroke"><div class="meter-wrap">-</div></td>
+            <td id="meter_dm"><div class="meter-wrap">-</div></td>
+            <td id="meter_htn"><div class="meter-wrap">-</div></td>
+            <td id="meter_mace"><div class="meter-wrap">-</div></td>
           </tr>
         </table>
 
-        <!-- 六、綜合評估與過往/本次會談紀錄 -->
-        <div class="section-header">
+        <!-- 六、綜合評估、歷程紀錄與醫囑措施 -->
+        <div class="table-section-title">
           <span>【綜合評估與建議採行措施】</span>
-          <button type="button" class="quick-btn no-print" onclick="insertSOAPTemplate()">⚡ 自動帶入今日會談摘要範本</button>
+          <button type="button" class="btn btn-secondary no-print" onclick="autoGenerateConsultNote()" style="padding:2px 8px;font-size:11px;">
+            ⚡ 帶入本次訪談 SOAP 範本
+          </button>
         </div>
-        <table class="form-table">
+        <table class="data-table">
           <tr>
-            <th colspan="6">過往訪談紀錄 (歷年紀錄時間軸)</th>
-            <th colspan="6">本次訪談特殊記載事項 (SOAP / 衛教紀錄)</th>
+            <th colspan="6">過往歷年訪談紀錄時間軸</th>
+            <th colspan="6">本次訪談特殊記載事項 (SOAP 評估/衛教處置)</th>
           </tr>
           <tr>
-            <td colspan="6"><textarea id="f_past_notes" class="notes-textarea" placeholder="尚無過往訪談紀錄"></textarea></td>
-            <td colspan="6"><textarea id="f_current_notes" class="notes-textarea" placeholder="請輸入本次會談紀錄，或點擊右上角「自動帶入今日會談摘要範本」..."></textarea></td>
+            <td colspan="6"><textarea id="txt_history_notes" class="textarea-notes" placeholder="尚無過往訪談紀錄"></textarea></td>
+            <td colspan="6"><textarea id="txt_current_notes" class="textarea-notes" placeholder="請填寫本次會談紀錄，或點擊右上角自動帶入 SOAP 處置範本..."></textarea></td>
           </tr>
           <tr>
-            <td class="cell-label" colspan="2">醫療建議</td>
+            <td class="th-col" colspan="2">醫療衛教建議</td>
             <td colspan="10">
-              <div class="checkbox-group">
-                <label class="checkbox-item"><input type="checkbox" checked /> 健康指導</label>
-                <label class="checkbox-item"><input type="checkbox" id="edu_htn" /> 高血壓衛教</label>
-                <label class="checkbox-item"><input type="checkbox" id="edu_lip" /> 高血脂衛教</label>
-                <label class="checkbox-item"><input type="checkbox" id="edu_dm" /> 糖尿病衛教</label>
-                <label class="checkbox-item"><input type="checkbox" checked /> 飲食衛教</label>
-                <label class="checkbox-item"><input type="checkbox" /> 藥物衛教</label>
-                <label class="checkbox-item"><input type="checkbox" /> 建立運動習慣</label>
-                <label class="checkbox-item"><input type="checkbox" /> 轉介就醫：<input class="inline-input" style="width:110px;border-bottom:1px solid #64748b;" placeholder="科別/院所" /></label>
-              </div>
+              <label class="check-wrap"><input type="checkbox" id="edu_guide" checked> 健康指導</label>
+              <label class="check-wrap"><input type="checkbox" id="edu_htn"> 高血壓衛教</label>
+              <label class="check-wrap"><input type="checkbox" id="edu_lipid"> 高血脂衛教</label>
+              <label class="check-wrap"><input type="checkbox" id="edu_dm"> 糖尿病衛教</label>
+              <label class="check-wrap"><input type="checkbox" id="edu_diet" checked> 飲食改善衛教</label>
+              <label class="check-wrap"><input type="checkbox" id="edu_med"> 規律用藥衛教</label>
+              <label class="check-wrap"><input type="checkbox" id="edu_sport"> 運動習慣建立</label>
+              <label class="check-wrap"><input type="checkbox" id="edu_referral"> 轉介醫療院所：<input type="text" class="clean-input" placeholder="科別" style="width:90px;"></label>
             </td>
           </tr>
           <tr>
-            <td class="cell-label" colspan="2">工作適性與工時</td>
+            <td class="th-col" colspan="2">工作適性建議</td>
             <td colspan="10">
-              <div class="checkbox-group">
-                <label class="checkbox-item"><input type="radio" name="work_fit" checked /> 適任目前工作</label>
-                <label class="checkbox-item"><input type="radio" name="work_fit" /> 適性配工</label>
-                <label class="checkbox-item"><input type="radio" name="work_fit" /> 工作內容調整</label>
-                <span>｜ 工時調整：</span>
-                <label class="checkbox-item"><input type="checkbox" /> 不宜加班</label>
-                <label class="checkbox-item"><input type="checkbox" /> 加班&lt;45小時</label>
-                <label class="checkbox-item"><input type="checkbox" /> 不宜夜間工作</label>
-              </div>
+              <label class="check-wrap"><input type="radio" name="adaptRadio" checked> 適任目前工作</label>
+              <label class="check-wrap"><input type="radio" name="adaptRadio"> 適性配工</label>
+              <label class="check-wrap"><input type="radio" name="adaptRadio"> 工作內容調整</label>
+              <span style="color:#94a3b8;margin:0 4px;">|</span>
+              <label class="check-wrap"><input type="checkbox"> 不宜加班</label>
+              <label class="check-wrap"><input type="checkbox"> 加班&lt;45小時</label>
+              <label class="check-wrap"><input type="checkbox"> 限制夜間工作</label>
             </td>
           </tr>
           <tr>
-            <td class="cell-label" colspan="2">追蹤建議</td>
+            <td class="th-col" colspan="2">追蹤管理建議</td>
             <td colspan="5">
-              <div class="checkbox-group">
-                <label class="checkbox-item"><input type="radio" name="followup" id="fu_close" /> 自主健康管理結案</label>
-                <label class="checkbox-item"><input type="radio" name="followup" id="fu_next" checked /> 建議 <input type="number" id="fu_months" value="3" style="width:42px;text-align:center;border:1px solid #64748b;" /> 個月內追蹤複評</label>
-              </div>
+              <label class="check-wrap"><input type="radio" name="fuRadio"> 自主健康管理結案</label>
+              <label class="check-wrap"><input type="radio" name="fuRadio" checked> 建議 <input type="number" id="val_fu_month" value="3" style="width:36px;text-align:center;border:1px solid #94a3b8;border-radius:2px;font-size:11.5px;"> 個月內醫護人員追蹤複評</label>
             </td>
-            <td class="cell-label" colspan="2">醫護人員簽章</td>
+            <td class="th-col" colspan="2">醫護人員簽章</td>
             <td colspan="3" style="text-align:center;">
-              <select id="stampSelect" class="no-print" onchange="updateStamp()" style="margin-bottom:4px;font-size:12px;">
+              <select id="sel_doctor_stamp" class="no-print" onchange="renderStampPreview()" style="font-size:11px;margin-bottom:2px;">
                 <option value="劉邦宇">職護：劉邦宇</option>
                 <option value="蔡旻翰">職醫：蔡旻翰</option>
                 <option value="莊琳琳">職護：莊琳琳</option>
                 <option value="郭淑勤">職護：郭淑勤</option>
               </select>
-              <div><span id="stampDisplay" class="stamp-box">劉邦宇</span></div>
+              <div><span class="stamp-render" id="stampBox">劉邦宇</span></div>
             </td>
           </tr>
         </table>
@@ -448,9 +939,16 @@
     </main>
   </div>
 
+  <!-- 浮動通知容器 -->
+  <div class="toast-container" id="toastContainer"></div>
+
 <script>
-// 1. 內建去識別化示範資料（取自上傳之示範用表單，開箱即用）
-const DEFAULT_DATA = [
+/**
+ * 旗艦級臨場健康服務附表八系統核心 (Engine & State Management)
+ */
+
+// 1. 去識別化示範個案資料集 (保證開箱即用)
+const PRELOAD_CASES = [
   {
     empId: 15, gender: "女", age: 45, birth: "1981-03-13", plant: "總公司", dept: "製二部 裝配開關課", title: "技術員", hire: "2012-05-01",
     shift: "否", ot: 22, examDate: "2026-04-22", medHistory: "高血壓", smoke: "從未吸菸", drink: "從未喝酒", betel: "從未嚼食檳榔",
@@ -459,7 +957,7 @@ const DEFAULT_DATA = [
     frs: "7%", cvdOverride: 0, iscore: 25, jscore: 32.14, workType: 0,
     hand: "右手", msdPain: "是", msdDur: "1個月", neck: 1, uBack: 1, lBack: 1, lSh: 1, rSh: 1, ergoCount: 0,
     specOverview: "-", specGrade: 0, trackItem: "健檢異常(續追蹤)",
-    chd: "9.6", stroke: "18.55", dm: "36", htn: "收縮壓>140不適用", mace: "22.15",
+    chd: "9.60", stroke: "18.55", dm: "36.00", htn: "收縮壓>140不適用", mace: "22.15",
     pastNotes: "1120217(葉):\n11210:HT(111.12月起用藥、家福診所1#*QD)、131/95，注意舒張壓\n1140206:家福診所HT1#*QD、無自測習慣建議自備監測、減重飲食運動、TG偏高、偶感胸悶建議CV就醫\n1150715:HTN/10y-CVD-26%、BP:100-120/AC:100、HTN用藥中/衛教低糖低油飲食與運動/8月回診後追蹤"
   },
   {
@@ -474,7 +972,7 @@ const DEFAULT_DATA = [
     pastNotes: "1140810:特作噪音與粉塵作業分級2級，蛋白尿(++)建議腎臟內科複檢，上下背痠痛3級衛教正確搬運姿勢。"
   },
   {
-    empId: 3, gender: "女", age: 64, birth: "1962-03-03", plant: "總公司", dept: "行政管理處", title: "專員", hire: "-",
+    empId: 3, gender: "女", age: 64, birth: "1962-03-03", plant: "總公司", dept: "行政管理處", title: "專員", hire: "2005-03-01",
     shift: "否", ot: 0, examDate: "2026-04-22", medHistory: "肺結核、甲狀腺疾病", smoke: "從未吸菸", drink: "從未喝酒", betel: "從未嚼食檳榔",
     sleep: 6, symptoms: "無異狀", bh: 153.3, bw: 51.5, bmi: 21.9, waist: 73, sbp: 128, dbp: 75,
     wbc: 4.9, hb: 13.8, ac: 101, gpt: 17, tc: 226, tg: 62, hdl: 82, ldl: 131.6, cr: 0.5, uPro: "(-)", uGlu: "(-)", cxr: "拒照", phys: "無異常",
@@ -485,7 +983,7 @@ const DEFAULT_DATA = [
     pastNotes: "1130423:主動健康諮詢、29歲甲狀腺全切/長庚/部北追蹤藥物補充、TC/LDL偏高建議飲食運動調整\n1140515:補充B群、納豆激素習慣，幼時TB長庚Chest追蹤、夜眠欠佳，耳鳴暈眩諮詢，建議神內追蹤"
   },
   {
-    empId: 5, gender: "女", age: 61, birth: "1965-05-12", plant: "總公司", dept: "財務部", title: "高專", hire: "-",
+    empId: 5, gender: "女", age: 61, birth: "1965-05-12", plant: "總公司", dept: "財務部", title: "高專", hire: "2008-07-15",
     shift: "否", ot: 10, examDate: "2026-04-22", medHistory: "高血壓", smoke: "從未吸菸", drink: "從未喝酒", betel: "從未嚼食檳榔",
     sleep: 6, symptoms: "雙膝退化疼痛", bh: 156.0, bw: 75.5, bmi: 31.0, waist: 92, sbp: 152, dbp: 92,
     wbc: 6.5, hb: 13.1, ac: 112, gpt: 28, tc: 210, tg: 168, hdl: 44, ldl: 132, cr: 0.7, uPro: "(-)", uGlu: "(-)", cxr: "無異常", phys: "無異常",
@@ -497,264 +995,338 @@ const DEFAULT_DATA = [
   }
 ];
 
-let employees = [...DEFAULT_DATA];
-let currentFilter = 'all';
-let currentEmp = employees[0];
+let dataset = [...PRELOAD_CASES];
+let activeFilter = 'all';
+let currentCase = dataset[0];
 
-// 2. 分級計算引擎（完全取代原本脆弱的跨表 VLOOKUP / IF 公式）
-function scoreVital(emp) {
-  const isF = emp.gender === '女';
-  const scores = {};
-  scores.bmi = emp.bmi >= 35 ? 3 : emp.bmi >= 30 ? 2 : emp.bmi >= 24 ? 1 : 0;
-  scores.waist = isF
+// 2. 演算法引擎：健管分級 (1~4級) 與異常負荷風險矩陣
+function evaluateVitals(emp) {
+  const isFemale = emp.gender === '女';
+  const sc = {};
+  sc.bmi = emp.bmi >= 35 ? 3 : emp.bmi >= 30 ? 2 : emp.bmi >= 24 ? 1 : 0;
+  sc.waist = isFemale
     ? (emp.waist >= 100 ? 3 : emp.waist >= 90 ? 2 : emp.waist >= 80 ? 1 : 0)
     : (emp.waist >= 110 ? 3 : emp.waist >= 100 ? 2 : emp.waist >= 90 ? 1 : 0);
-  scores.sbp = emp.sbp >= 180 ? 4 : emp.sbp >= 160 ? 3 : emp.sbp >= 140 ? 2 : emp.sbp >= 130 ? 1 : 0;
-  scores.dbp = emp.dbp >= 110 ? 4 : emp.dbp >= 100 ? 3 : emp.dbp >= 90 ? 2 : emp.dbp >= 80 ? 1 : 0;
-  scores.bp = Math.max(scores.sbp, scores.dbp);
-  scores.wbc = emp.wbc >= 15 ? 3 : emp.wbc >= 12.5 ? 2 : emp.wbc >= 9.7 ? 1 : 0;
-  scores.hb = emp.hb < 8 ? 3 : emp.hb < 10 ? 2 : (isF ? (emp.hb < 11 ? 1 : 0) : (emp.hb < 13 ? 1 : 0));
-  scores.ac = emp.ac >= 300 ? 4 : emp.ac >= 200 ? 3 : emp.ac >= 126 ? 2 : emp.ac >= 100 ? 1 : 0;
-  scores.gpt = emp.gpt >= 200 ? 3 : emp.gpt >= 80 ? 2 : emp.gpt >= 40 ? 1 : 0;
-  scores.tc = emp.tc >= 300 ? 3 : emp.tc >= 250 ? 2 : emp.tc >= 200 ? 1 : 0;
-  scores.tg = emp.tg >= 500 ? 3 : emp.tg >= 250 ? 2 : emp.tg >= 150 ? 1 : 0;
-  scores.hdl = isF ? (emp.hdl < 40 ? 2 : emp.hdl < 50 ? 1 : 0) : (emp.hdl < 35 ? 2 : emp.hdl < 40 ? 1 : 0);
-  scores.ldl = emp.ldl >= 190 ? 3 : emp.ldl >= 160 ? 2 : emp.ldl >= 130 ? 1 : 0;
-  scores.cr = emp.cr >= 3.0 ? 4 : emp.cr > 1.3 ? 2 : 0;
-  scores.urine = (String(emp.uPro).includes('+++') || String(emp.uGlu).includes('+++')) ? 3
-               : (String(emp.uPro).includes('++') || String(emp.uGlu).includes('++')) ? 2
-               : (String(emp.uPro).includes('+') || String(emp.uGlu).includes('+')) ? 1 : 0;
-  scores.cxr = emp.cxr === '無異常' ? 0 : 1;
+  sc.sbp = emp.sbp >= 180 ? 4 : emp.sbp >= 160 ? 3 : emp.sbp >= 140 ? 2 : emp.sbp >= 130 ? 1 : 0;
+  sc.dbp = emp.dbp >= 110 ? 4 : emp.dbp >= 100 ? 3 : emp.dbp >= 90 ? 2 : emp.dbp >= 80 ? 1 : 0;
+  sc.bp = Math.max(sc.sbp, sc.dbp);
+  sc.wbc = emp.wbc >= 15 ? 3 : emp.wbc >= 12.5 ? 2 : emp.wbc >= 9.7 ? 1 : 0;
+  sc.hb = emp.hb < 8 ? 3 : emp.hb < 10 ? 2 : (isFemale ? (emp.hb < 11 ? 1 : 0) : (emp.hb < 13 ? 1 : 0));
+  sc.ac = emp.ac >= 300 ? 4 : emp.ac >= 200 ? 3 : emp.ac >= 126 ? 2 : emp.ac >= 100 ? 1 : 0;
+  sc.gpt = emp.gpt >= 200 ? 3 : emp.gpt >= 80 ? 2 : emp.gpt >= 40 ? 1 : 0;
+  sc.tc = emp.tc >= 300 ? 3 : emp.tc >= 250 ? 2 : emp.tc >= 200 ? 1 : 0;
+  sc.tg = emp.tg >= 500 ? 3 : emp.tg >= 250 ? 2 : emp.tg >= 150 ? 1 : 0;
+  sc.hdl = isFemale ? (emp.hdl < 40 ? 2 : emp.hdl < 50 ? 1 : 0) : (emp.hdl < 35 ? 2 : emp.hdl < 40 ? 1 : 0);
+  sc.ldl = emp.ldl >= 190 ? 3 : emp.ldl >= 160 ? 2 : emp.ldl >= 130 ? 1 : 0;
+  sc.cr = emp.cr >= 3.0 ? 4 : emp.cr > 1.3 ? 2 : 0;
+  sc.urine = (String(emp.uPro).includes('+++') || String(emp.uGlu).includes('+++')) ? 3
+           : (String(emp.uPro).includes('++') || String(emp.uGlu).includes('++')) ? 2
+           : (String(emp.uPro).includes('+') || String(emp.uGlu).includes('+')) ? 1 : 0;
+  sc.cxr = (emp.cxr === '無異常' || emp.cxr === '無明顯異狀') ? 0 : 1;
 
-  const maxScore = Math.max(...Object.values(scores));
-  const gradeMap = {
-    0: "1級(正常)", 1: "1級(正常)",
-    2: "2級(建議自我健康管理)", 3: "3級(建議尋求醫療協助)", 4: "4級(關懷人員)"
+  const maxVal = Math.max(...Object.values(sc));
+  const mapping = {
+    0: "1級 (正常)", 1: "1級 (正常)",
+    2: "2級 (建議自主管理)", 3: "3級 (建議醫療協助)", 4: "4級 (關懷追蹤人員)"
   };
-  return { scores, maxScore, healthGrade: gradeMap[maxScore] || "1級(正常)" };
+  return { scores: sc, maxVal, gradeText: mapping[maxVal] || "1級 (正常)" };
 }
 
-function calcOverload(emp) {
-  const frsNum = parseFloat(String(emp.frs).replace('%', '')) || 0;
-  const sFrs = frsNum >= 20 ? 2 : frsNum >= 10 ? 1 : 0;
+function evaluateOverload(emp) {
+  const frsVal = parseFloat(String(emp.frs).replace('%', '')) || 0;
+  const sFrs = frsVal >= 20 ? 2 : frsVal >= 10 ? 1 : 0;
   const sCvd = parseInt(emp.cvdOverride || 0, 10);
   const sI = emp.iscore >= 70 ? 2 : emp.iscore >= 50 ? 1 : 0;
   const sJ = emp.jscore >= 60 ? 2 : emp.jscore >= 45 ? 1 : 0;
   const sOt = emp.ot > 80 ? 2 : emp.ot >= 45 ? 1 : 0;
   const sWt = emp.workType >= 2 ? 1 : 0;
 
-  const cvdFinal = Math.max(sFrs, sCvd);
+  const finalCvd = Math.max(sFrs, sCvd);
   const workloadSum = sI + sJ + sOt + sWt;
   const workloadLevel = workloadSum === 0 ? 0 : (workloadSum <= 2 ? 1 : 2);
-  const totalRisk = cvdFinal + workloadLevel;
+  const totalRiskScore = finalCvd + workloadLevel;
   const labels = {
     0: "0:不需面談", 1: "1:不需面談", 2: "2:建議面談", 3: "3:需要面談", 4: "4:需要面談"
   };
-  return { sFrs, sCvd, sI, sJ, sOt, sWt, totalRisk, label: labels[totalRisk] || "0:不需面談" };
+  return { sFrs, sCvd, sI, sJ, sOt, sWt, totalRiskScore, gradeLabel: labels[totalRiskScore] || "0:不需面談" };
 }
 
-// 3. 介面渲染邏輯
-function setFilter(f, btn) {
-  currentFilter = f;
-  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderEmployeeList();
-}
-
-function renderEmployeeList() {
-  const q = document.getElementById('searchInput').value.trim().toLowerCase();
-  const listEl = document.getElementById('employeeList');
-  listEl.innerHTML = '';
-
-  employees.forEach(emp => {
-    const vital = scoreVital(emp);
-    const over = calcOverload(emp);
-    if (currentFilter === 'track' && !emp.trackItem) return;
-    if (currentFilter === 'g34' && vital.maxScore < 3) return;
-    if (currentFilter === 'overload' && over.totalRisk < 2) return;
-
-    const searchStr = `${emp.empId} ${emp.dept} ${emp.plant} ${emp.medHistory}`.toLowerCase();
-    if (q && !searchStr.includes(q)) return;
-
-    const card = document.createElement('div');
-    card.className = `emp-card ${currentEmp && currentEmp.empId === emp.empId ? 'active' : ''}`;
-    const gClass = vital.maxScore >= 4 ? 'tag-g4' : vital.maxScore === 3 ? 'tag-g3' : vital.maxScore === 2 ? 'tag-g2' : 'tag-g1';
-    card.innerHTML = `
-      <div class="emp-card-top">
-        <span>工號 #${String(emp.empId).padStart(5, '0')}</span>
-        <span>${emp.gender} · ${emp.age}歲</span>
-      </div>
-      <div class="emp-meta">${emp.plant} / ${emp.dept}</div>
-      <div class="emp-badges">
-        <span class="tag ${gClass}">${vital.healthGrade}</span>
-        <span class="tag ${over.totalRisk >= 2 ? 'tag-g3' : 'tag-g1'}">負荷 ${over.label}</span>
-        ${emp.trackItem ? `<span class="tag tag-track">${emp.trackItem}</span>` : ''}
+// 3. 視覺化渲染長條計量器 (Micro Risk Meter)
+function buildRiskMeterHtml(rawVal, midTh, highTh) {
+  const num = parseFloat(rawVal);
+  if (isNaN(num)) {
+    return `
+      <div class="meter-wrap">
+        <span class="chip chip-g4" style="font-size:11px;">⚠️ ${rawVal || '數值過高不適用'}</span>
       </div>
     `;
-    card.onclick = () => selectEmployee(emp);
-    listEl.appendChild(card);
+  }
+  const pct = Math.min(100, Math.max(2, num));
+  const levelClass = num >= highTh ? 'meter-high' : num >= midTh ? 'meter-mid' : 'meter-low';
+  const tagClass = num >= highTh ? 'chip-g4' : num >= midTh ? 'chip-g3' : 'chip-g1';
+  const label = num >= highTh ? '高風險' : num >= midTh ? '中風險' : '低風險';
+
+  return `
+    <div class="meter-wrap">
+      <div class="meter-val-row">
+        <span>${num.toFixed(1)}%</span>
+        <span class="chip ${tagClass}">${label}</span>
+      </div>
+      <div class="meter-bar-track">
+        <div class="meter-bar-fill ${levelClass}" style="width: ${pct}%;"></div>
+      </div>
+    </div>
+  `;
+}
+
+function bindFieldClass(elId, text, score) {
+  const el = document.getElementById(elId);
+  el.textContent = text;
+  el.className = score >= 3 ? 'abn-severe' : score === 2 ? 'abn-moderate' : score === 1 ? 'abn-borderline' : 'abn-none';
+}
+
+// 4. 個案展示與主表單連動
+function renderEmployeeCardList() {
+  const q = document.getElementById('filterInput').value.trim().toLowerCase();
+  const list = document.getElementById('employeeCardList');
+  list.innerHTML = '';
+
+  dataset.forEach((c) => {
+    const v = evaluateVitals(c);
+    const o = evaluateOverload(c);
+
+    if (activeFilter === 'track' && !c.trackItem) return;
+    if (activeFilter === 'g34' && v.maxVal < 3) return;
+    if (activeFilter === 'overload' && o.totalRiskScore < 2) return;
+
+    const fullStr = `${c.empId} ${c.dept} ${c.plant} ${c.medHistory}`.toLowerCase();
+    if (q && !fullStr.includes(q)) return;
+
+    const card = document.createElement('div');
+    card.className = `employee-card ${currentCase && currentCase.empId === c.empId ? 'active' : ''}`;
+    const gChip = v.maxVal >= 4 ? 'chip-g4' : v.maxVal === 3 ? 'chip-g3' : v.maxVal === 2 ? 'chip-g2' : 'chip-g1';
+    
+    card.innerHTML = `
+      <div class="emp-row-top">
+        <span class="emp-id-label">#${String(c.empId).padStart(5, '0')}</span>
+        <span class="emp-sub-label">${c.gender} ‧ ${c.age}歲</span>
+      </div>
+      <div class="emp-dept-text">${c.plant} / ${c.dept}</div>
+      <div class="emp-badge-row">
+        <span class="chip ${gChip}">${v.gradeText}</span>
+        <span class="chip ${o.totalRiskScore >= 2 ? 'chip-g3' : 'chip-g1'}">負荷 ${o.gradeLabel}</span>
+        ${c.trackItem ? `<span class="chip chip-track">${c.trackItem}</span>` : ''}
+      </div>
+    `;
+    card.onclick = () => selectCase(c);
+    list.appendChild(card);
   });
 }
 
-function applyCellScore(id, text, score) {
-  const el = document.getElementById(id);
-  el.textContent = text;
-  el.className = score >= 3 ? 'val-abn-3' : score === 2 ? 'val-abn-2' : score === 1 ? 'val-abn-1' : '';
+function selectCase(c) {
+  currentCase = c;
+  renderEmployeeCardList();
+  const v = evaluateVitals(c);
+  const o = evaluateOverload(c);
+
+  // 基本資料
+  document.getElementById('val_name').value = c.name || '';
+  document.getElementById('val_gender').textContent = c.gender;
+  document.getElementById('val_age').textContent = c.age;
+  document.getElementById('val_birth').textContent = c.birth;
+  document.getElementById('val_empid').textContent = String(c.empId).padStart(5, '0');
+  document.getElementById('val_dept').textContent = `${c.plant} / ${c.dept}`;
+  document.getElementById('val_title').textContent = c.title || '-';
+  document.getElementById('val_hire').textContent = c.hire || '-';
+  document.getElementById('val_shift').textContent = c.shift;
+  document.getElementById('val_ot').textContent = c.ot;
+  document.getElementById('metaSpecList').textContent = c.specOverview || '-';
+  document.getElementById('metaSpecGrade').textContent = c.specGrade || '0';
+
+  // 生化數值
+  document.getElementById('val_exam_date').textContent = c.examDate;
+  document.getElementById('val_history').textContent = c.medHistory;
+  document.getElementById('val_smoke').textContent = c.smoke;
+  document.getElementById('val_drink').textContent = c.drink;
+  document.getElementById('val_betel').textContent = c.betel;
+  document.getElementById('val_sleep').textContent = c.sleep;
+  document.getElementById('val_symptoms').textContent = c.symptoms;
+  document.getElementById('val_bh').textContent = c.bh;
+  document.getElementById('val_bw').textContent = c.bw;
+
+  bindFieldClass('val_bmi', c.bmi, v.scores.bmi);
+  bindFieldClass('val_waist', c.waist, v.scores.waist);
+  bindFieldClass('val_bp', `${c.sbp} / ${c.dbp}`, v.scores.bp);
+  bindFieldClass('val_wbc', c.wbc, v.scores.wbc);
+  bindFieldClass('val_hb', c.hb, v.scores.hb);
+  bindFieldClass('val_ac', c.ac, v.scores.ac);
+  bindFieldClass('val_gpt', c.gpt, v.scores.gpt);
+  bindFieldClass('val_cr', c.cr, v.scores.cr);
+  bindFieldClass('val_tc', c.tc, v.scores.tc);
+  bindFieldClass('val_tg', c.tg, v.scores.tg);
+  bindFieldClass('val_hdl', c.hdl, v.scores.hdl);
+  bindFieldClass('val_ldl', c.ldl, v.scores.ldl);
+  bindFieldClass('val_cxr', c.cxr, v.scores.cxr);
+  bindFieldClass('val_urine', `Pro: ${c.uPro} / Glu: ${c.uGlu}`, v.scores.urine);
+  document.getElementById('val_phys').textContent = c.phys || '無異常';
+  bindFieldClass('val_health_level', v.gradeText, v.maxVal);
+
+  // 異常負荷
+  document.getElementById('sc_frs_val').textContent = c.frs;
+  document.getElementById('sc_frs_score').textContent = o.sFrs;
+  document.getElementById('val_cvd_select').value = c.cvdOverride || 0;
+  document.getElementById('sc_cvd_score').textContent = o.sCvd;
+  document.getElementById('sc_iscore_val').textContent = `${c.iscore} 分`;
+  document.getElementById('sc_iscore_score').textContent = o.sI;
+  document.getElementById('sc_jscore_val').textContent = `${c.jscore} 分`;
+  document.getElementById('sc_jscore_score').textContent = o.sJ;
+  document.getElementById('sc_ot_wt_val').textContent = `${c.ot} hr / ${c.workType} 項`;
+  document.getElementById('sc_ot_wt_score').textContent = `${o.sOt} + ${o.sWt}`;
+  bindFieldClass('val_overload_grade', o.gradeLabel, o.totalRiskScore);
+
+  // 人因
+  document.getElementById('val_hand').textContent = c.hand;
+  document.getElementById('val_msd_pain').textContent = c.msdPain;
+  document.getElementById('val_msd_dur').textContent = c.msdDur;
+  document.getElementById('val_msd_trunk').textContent = `頸: ${c.neck} ｜ 上背: ${c.uBack} ｜ 下背: ${c.lBack}`;
+  document.getElementById('val_msd_upper').textContent = `左肩: ${c.lSh} ｜ 右肩: ${c.rSh}`;
+  document.getElementById('val_ergo_count').textContent = c.ergoCount;
+
+  // 5大慢性病長條計量器
+  document.getElementById('meter_chd').innerHTML = buildRiskMeterHtml(c.chd, 10, 20);
+  document.getElementById('meter_stroke').innerHTML = buildRiskMeterHtml(c.stroke, 10, 20);
+  document.getElementById('meter_dm').innerHTML = buildRiskMeterHtml(c.dm, 15, 30);
+  document.getElementById('meter_htn').innerHTML = buildRiskMeterHtml(c.htn, 20, 40);
+  document.getElementById('meter_mace').innerHTML = buildRiskMeterHtml(c.mace, 10, 20);
+
+  // 衛教連動勾選
+  document.getElementById('edu_htn').checked = v.scores.bp >= 1;
+  document.getElementById('edu_lipid').checked = (v.scores.tc >= 1 || v.scores.tg >= 1 || v.scores.ldl >= 1);
+  document.getElementById('edu_dm').checked = v.scores.ac >= 1;
+
+  // 備忘歷程
+  document.getElementById('txt_history_notes').value = c.pastNotes || '';
+  document.getElementById('txt_current_notes').value = c.currentNotes || '';
 }
 
-function formatRiskCell(id, val, midTh, highTh) {
-  const el = document.getElementById(id);
-  const num = parseFloat(val);
-  if (isNaN(num)) {
-    el.innerHTML = `<span class="risk-pill risk-high">H (${val || '高風險'})</span>`;
+function onCvdOverrideChange() {
+  if (!currentCase) return;
+  currentCase.cvdOverride = parseInt(document.getElementById('val_cvd_select').value, 10);
+  selectCase(currentCase);
+  showToast('CVD 校正等級已動態更新並重算異常負荷風險！');
+}
+
+function renderStampPreview() {
+  document.getElementById('stampBox').textContent = document.getElementById('sel_doctor_stamp').value;
+}
+
+// 5. 快速產生 SOAP 筆記與儲存歷程
+function autoGenerateConsultNote() {
+  if (!currentCase) return;
+  const v = evaluateVitals(currentCase);
+  const redFlags = [];
+  if (v.scores.bp >= 1) redFlags.push(`BP:${currentCase.sbp}/${currentCase.dbp}`);
+  if (v.scores.ac >= 1) redFlags.push(`AC:${currentCase.ac}`);
+  if (v.scores.tc >= 1 || v.scores.ldl >= 1) redFlags.push(`TC:${currentCase.tc}/LDL:${currentCase.ldl}`);
+  if (v.scores.bmi >= 1) redFlags.push(`BMI:${currentCase.bmi}`);
+
+  const stampName = document.getElementById('sel_doctor_stamp').value;
+  const todayROC = "1151022";
+  const noteTemplate = `${todayROC}(${stampName[0]}): ${redFlags.length ? redFlags.join('、') : '常規體檢諮詢'}。病史(${currentCase.medHistory})，自訴夜眠${currentCase.sleep}小時。給予低糖低脂清淡飲食指導、衛教居家血壓自我監測與規律運動，建議定期醫療門診追蹤。`;
+  document.getElementById('txt_current_notes').value = noteTemplate;
+  showToast('已精準帶入專業 SOAP 會談摘要範本！');
+}
+
+function commitConsultation() {
+  if (!currentCase) return;
+  const newNote = document.getElementById('txt_current_notes').value.trim();
+  if (!newNote) {
+    showToast('⚠️ 請先輸入本次會談紀錄再行儲存！');
     return;
   }
-  const cls = num >= highTh ? 'risk-high' : num >= midTh ? 'risk-mid' : 'risk-low';
-  const lbl = num >= highTh ? '高風險' : num >= midTh ? '中風險' : '低風險';
-  el.innerHTML = `<strong>${num}%</strong> <span class="risk-pill ${cls}">${lbl}</span>`;
+  currentCase.pastNotes = currentCase.pastNotes ? `${currentCase.pastNotes}\n${newNote}` : newNote;
+  currentCase.currentNotes = '';
+  document.getElementById('txt_history_notes').value = currentCase.pastNotes;
+  document.getElementById('txt_current_notes').value = '';
+  showToast(`已成功將會談紀錄追加至工號 #${currentCase.empId} 的時間軸！`);
 }
 
-function selectEmployee(emp) {
-  currentEmp = emp;
-  renderEmployeeList();
-  const vital = scoreVital(emp);
-  const over = calcOverload(emp);
-
-  document.getElementById('f_name').value = emp.name || '';
-  document.getElementById('f_gender').textContent = emp.gender;
-  document.getElementById('f_age').textContent = emp.age;
-  document.getElementById('f_birth').textContent = emp.birth;
-  document.getElementById('f_empid').textContent = String(emp.empId).padStart(5, '0');
-  document.getElementById('f_dept').textContent = `${emp.plant} / ${emp.dept}`;
-  document.getElementById('f_title').textContent = emp.title || '-';
-  document.getElementById('f_hire').textContent = emp.hire || '-';
-  document.getElementById('f_shift').textContent = emp.shift;
-  document.getElementById('f_ot').textContent = emp.ot;
-  document.getElementById('f_spec_overview').textContent = emp.specOverview || '-';
-  document.getElementById('f_spec_grade').textContent = emp.specGrade || '0';
-
-  document.getElementById('f_exam_date').textContent = emp.examDate;
-  document.getElementById('f_history_med').textContent = emp.medHistory;
-  document.getElementById('f_smoke').textContent = emp.smoke;
-  document.getElementById('f_drink').textContent = emp.drink;
-  document.getElementById('f_betel').textContent = emp.betel;
-  document.getElementById('f_sleep').textContent = emp.sleep;
-  document.getElementById('f_symptoms').textContent = emp.symptoms;
-  document.getElementById('f_bh').textContent = emp.bh;
-  document.getElementById('f_bw').textContent = emp.bw;
-
-  applyCellScore('f_bmi', emp.bmi, vital.scores.bmi);
-  applyCellScore('f_waist', emp.waist, vital.scores.waist);
-  applyCellScore('f_bp', `${emp.sbp} / ${emp.dbp}`, vital.scores.bp);
-  applyCellScore('f_wbc', emp.wbc, vital.scores.wbc);
-  applyCellScore('f_hb', emp.hb, vital.scores.hb);
-  applyCellScore('f_ac', emp.ac, vital.scores.ac);
-  applyCellScore('f_gpt', emp.gpt, vital.scores.gpt);
-  applyCellScore('f_cr', emp.cr, vital.scores.cr);
-  applyCellScore('f_cxr', emp.cxr, vital.scores.cxr);
-  applyCellScore('f_tc', emp.tc, vital.scores.tc);
-  applyCellScore('f_tg', emp.tg, vital.scores.tg);
-  applyCellScore('f_hdl', emp.hdl, vital.scores.hdl);
-  applyCellScore('f_ldl', emp.ldl, vital.scores.ldl);
-  applyCellScore('f_urine', `Pro:${emp.uPro} / Glu:${emp.uGlu}`, vital.scores.urine);
-
-  document.getElementById('f_phys_summary').textContent = emp.phys || '無異常';
-  applyCellScore('f_health_grade', vital.healthGrade, vital.maxScore);
-
-  // 異常負荷與人因
-  document.getElementById('f_frs').textContent = emp.frs;
-  document.getElementById('s_frs').textContent = over.sFrs;
-  document.getElementById('f_cvd_override').value = emp.cvdOverride || 0;
-  document.getElementById('s_cvd').textContent = over.sCvd;
-  document.getElementById('f_iscore').textContent = `${emp.iscore} 分`;
-  document.getElementById('s_iscore').textContent = over.sI;
-  document.getElementById('f_jscore').textContent = `${emp.jscore} 分`;
-  document.getElementById('s_jscore').textContent = over.sJ;
-  document.getElementById('f_ot_worktype').textContent = `${emp.ot} hr / ${emp.workType} 項`;
-  document.getElementById('s_ot_wt').textContent = `${over.sOt} / ${over.sWt}`;
-  applyCellScore('f_overload_risk', over.label, over.totalRisk);
-
-  document.getElementById('f_hand').textContent = emp.hand;
-  document.getElementById('f_msd_pain').textContent = emp.msdPain;
-  document.getElementById('f_msd_dur').textContent = emp.msdDur;
-  document.getElementById('f_msd_trunk').textContent = `頸:${emp.neck} ｜ 上背:${emp.uBack} ｜ 下背:${emp.lBack}`;
-  document.getElementById('f_msd_upper').textContent = `左肩:${emp.lSh} ｜ 右肩:${emp.rSh}`;
-  document.getElementById('f_msd_lower').textContent = `雙下肢無明顯異常`;
-  document.getElementById('f_ergo_count').textContent = emp.ergoCount;
-
-  // 慢性病風險
-  formatRiskCell('r_chd', emp.chd, 10, 20);
-  formatRiskCell('r_stroke', emp.stroke, 10, 20);
-  formatRiskCell('r_dm', emp.dm, 15, 30);
-  formatRiskCell('r_htn', emp.htn, 20, 40);
-  formatRiskCell('r_mace', emp.mace, 10, 20);
-
-  // 衛教自動勾選與歷史紀錄
-  document.getElementById('edu_htn').checked = vital.scores.bp >= 1;
-  document.getElementById('edu_lip').checked = (vital.scores.tc >= 1 || vital.scores.tg >= 1 || vital.scores.ldl >= 1);
-  document.getElementById('edu_dm').checked = vital.scores.ac >= 1;
-  document.getElementById('f_past_notes').value = emp.pastNotes || '';
-  document.getElementById('f_current_notes').value = emp.currentNotes || '';
-}
-
-function recalcCurrentOverload() {
-  if (!currentEmp) return;
-  currentEmp.cvdOverride = parseInt(document.getElementById('f_cvd_override').value, 10);
-  selectEmployee(currentEmp);
-}
-
-function updateStamp() {
-  document.getElementById('stampDisplay').textContent = document.getElementById('stampSelect').value;
-}
-
-// 4. 快速帶入職護 SOAP 範本與寫入歷年紀錄
-function insertSOAPTemplate() {
-  if (!currentEmp) return;
-  const vital = scoreVital(currentEmp);
-  const abn = [];
-  if (vital.scores.bp >= 1) abn.push(`BP:${currentEmp.sbp}/${currentEmp.dbp}`);
-  if (vital.scores.bmi >= 1) abn.push(`BMI:${currentEmp.bmi}`);
-  if (vital.scores.ac >= 1) abn.push(`AC:${currentEmp.ac}`);
-  if (vital.scores.tc >= 1 || vital.scores.ldl >= 1) abn.push(`TC:${currentEmp.tc}/LDL:${currentEmp.ldl}`);
-  const summary = `1151022(${document.getElementById('stampSelect').value[0]}): ${abn.join('、') || '一般健檢追蹤'}、過去病史(${currentEmp.medHistory})，予低油低糖飲食與規律運動衛教、建議定期門診與居家血壓監測。`;
-  document.getElementById('f_current_notes').value = summary;
-}
-
-function saveCurrentConsultation() {
-  if (!currentEmp) return;
-  const note = document.getElementById('f_current_notes').value.trim();
-  if (!note) { alert('請先輸入或點擊「自動帶入今日會談摘要範本」再寫入歷年紀錄！'); return; }
-  currentEmp.pastNotes = currentEmp.pastNotes ? `${currentEmp.pastNotes}\n${note}` : note;
-  currentEmp.currentNotes = '';
-  document.getElementById('f_past_notes').value = currentEmp.pastNotes;
-  document.getElementById('f_current_notes').value = '';
-  alert(`已成功將本次會談寫入工號 #${String(currentEmp.empId).padStart(5, '0')} 的歷年紀錄！`);
-}
-
-function exportHistoryCSV() {
+function exportUpdatedTimelineCSV() {
   let csv = '\uFEFF姓名,性別,工號,紀錄,狀態,追蹤日期\n';
-  employees.forEach(e => {
-    const cleanNote = String(e.pastNotes || '').replace(/"/g, '""');
-    csv += `"${e.name || ''}","${e.gender}","${e.empId}","${cleanNote}","已訪談","${document.getElementById('f_visit_date').value}"\n`;
+  dataset.forEach((e) => {
+    const escaped = String(e.pastNotes || '').replace(/"/g, '""');
+    csv += `"${e.name || ''}","${e.gender}","${e.empId}","${escaped}","已訪談","${document.getElementById('val_interview_date').value}"\n`;
   });
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `更新_歷年紀錄_${new Date().toISOString().slice(0,10)}.csv`;
+  a.href = url;
+  a.download = `臨場歷年紀錄_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
+  showToast('已匯出最新歷年紀錄 CSV 檔案！');
 }
 
-// 5. 支援直接匯入上傳之「示範用_公版套表用.csv」或 Excel
-document.getElementById('fileInput').addEventListener('change', async (evt) => {
-  const files = Array.from(evt.target.files);
+// 6. 浮動式氣泡通知 (Toast System)
+function showToast(msg) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast-msg';
+  toast.innerHTML = `<span>⚡</span><span>${msg}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+    toast.style.transform = 'translateY(10px) scale(0.9)';
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 3200);
+}
+
+// 7. 快捷鍵 (Power-user Keyboard Shortcuts)
+window.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    commitConsultation();
+  }
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+    e.preventDefault();
+    document.getElementById('filterInput').focus();
+  }
+  if (e.key === ']' || e.key === 'ArrowDown') {
+    if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      const idx = dataset.findIndex(x => x.empId === currentCase.empId);
+      if (idx !== -1 && idx < dataset.length - 1) selectCase(dataset[idx + 1]);
+    }
+  }
+  if (e.key === '[' || e.key === 'ArrowUp') {
+    if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      const idx = dataset.findIndex(x => x.empId === currentCase.empId);
+      if (idx > 0) selectCase(dataset[idx - 1]);
+    }
+  }
+});
+
+function applyQuickFilter(type, el) {
+  activeFilter = type;
+  document.querySelectorAll('.filter-pill-group .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderEmployeeCardList();
+}
+
+function filterEmployeeList() {
+  renderEmployeeCardList();
+}
+
+// 8. 本機 Excel/CSV 檔案拖曳與匯入解析
+document.getElementById('fileUploader').addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files);
   for (const file of files) {
-    const data = await file.arrayBuffer();
-    const wb = XLSX.read(data, { type: 'array' });
-    wb.SheetNames.forEach(name => {
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[name]);
+    const buffer = await file.arrayBuffer();
+    const wb = XLSX.read(buffer, { type: 'array' });
+    wb.SheetNames.forEach(sheetName => {
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName]);
       if (!rows.length) return;
       if ('BH' in rows[0] && 'SBP' in rows[0]) {
-        employees = rows.map(r => ({
+        dataset = rows.map(r => ({
           empId: r['工號'], name: r['姓名'] || '', gender: r['性別'] || '', age: r['年齡'] || '',
           birth: r['生日'] || '', plant: r['廠區'] || '', dept: r['部門'] || '', title: r['職稱'] || '',
           hire: r['到職日期'] || '-', shift: r['輪班'] || '否', ot: Number(r['加班'] || 0),
@@ -777,28 +1349,28 @@ document.getElementById('fileInput').addEventListener('change', async (evt) => {
         }));
       } else if ('紀錄' in rows[0] && '工號' in rows[0]) {
         const histMap = Object.fromEntries(rows.map(r => [String(r['工號']), r['紀錄']]));
-        employees.forEach(e => { if (histMap[String(e.empId)]) e.pastNotes = histMap[String(e.empId)]; });
+        dataset.forEach(d => { if (histMap[String(d.empId)]) d.pastNotes = histMap[String(d.empId)]; });
       } else if ('冠心病風險（CHD Risk %）' in rows[0]) {
         const riskMap = Object.fromEntries(rows.map(r => [String(r['工號']), r]));
-        employees.forEach(e => {
-          const rk = riskMap[String(e.empId)];
-          if (rk) {
-            e.chd = rk['冠心病風險（CHD Risk %）'];
-            e.stroke = rk['腦中風風險（Stroke Risk %）'];
-            e.dm = rk['糖尿病風險（Diabetes Risk %）'];
-            e.htn = rk['高血壓風險（Hypertension Risk %）'];
-            e.mace = rk['心血管不良事件風險（MACE Risk %）'];
+        dataset.forEach(d => {
+          const m = riskMap[String(d.empId)];
+          if (m) {
+            d.chd = m['冠心病風險（CHD Risk %）'];
+            d.stroke = m['腦中風風險（Stroke Risk %）'];
+            d.dm = m['糖尿病風險（Diabetes Risk %）'];
+            d.htn = m['高血壓風險（Hypertension Risk %）'];
+            d.mace = m['心血管不良事件風險（MACE Risk %）'];
           }
         });
       }
     });
   }
-  selectEmployee(employees[0]);
-  alert(`成功載入 ${employees.length} 筆員工資料！`);
+  selectCase(dataset[0]);
+  showToast(`✨ 成功載入並即時演算 ${dataset.length} 筆員工健康檔案！`);
 });
 
-// 初始化載入第一筆個案
-selectEmployee(employees[0]);
+// 初始化啟動
+selectCase(dataset[0]);
 </script>
 </body>
 </html>
